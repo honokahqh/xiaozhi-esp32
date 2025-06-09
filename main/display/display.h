@@ -8,6 +8,12 @@
 
 #include <string>
 
+typedef enum {
+    SCREEN_PANEL_SLEEP = 0,
+    SCREEN_PANEL_COMM = 1,  
+    SCREEN_PANEL_LOADING = 2,
+}ScreenPanelId;
+
 struct DisplayFonts {
     const lv_font_t* text_font = nullptr;
     const lv_font_t* icon_font = nullptr;
@@ -29,7 +35,7 @@ public:
     virtual void SetTheme(const std::string& theme_name);
     virtual std::string GetTheme() { return current_theme_name_; }
     virtual void UpdateStatusBar(bool update_all = false);
-
+    virtual void SetMainPanel(ScreenPanelId panel_id) { return; };
     inline int width() const { return width_; }
     inline int height() const { return height_; }
 
@@ -53,6 +59,7 @@ protected:
     const char* battery_icon_ = nullptr;
     const char* network_icon_ = nullptr;
     bool muted_ = false;
+    int panel_id_ = SCREEN_PANEL_LOADING;
     std::string current_theme_name_;
 
     esp_timer_handle_t notification_timer_ = nullptr;

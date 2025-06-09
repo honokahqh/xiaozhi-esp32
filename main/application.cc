@@ -927,6 +927,7 @@ void Application::SetDeviceState(DeviceState state) {
         case kDeviceStateIdle:
             display->SetStatus(Lang::Strings::STANDBY);
             display->SetEmotion("neutral");
+            display->SetMainPanel(SCREEN_PANEL_SLEEP);
             audio_processor_->Stop();
             wake_word_->StartDetection();
             break;
@@ -934,11 +935,13 @@ void Application::SetDeviceState(DeviceState state) {
             display->SetStatus(Lang::Strings::CONNECTING);
             display->SetEmotion("neutral");
             display->SetChatMessage("system", "");
+            display->SetMainPanel(SCREEN_PANEL_LOADING);
             timestamp_queue_.clear();
             break;
         case kDeviceStateListening:
             display->SetStatus(Lang::Strings::LISTENING);
             display->SetEmotion("neutral");
+            display->SetMainPanel(SCREEN_PANEL_COMM);
             // Update the IoT states before sending the start listening command
 #if CONFIG_IOT_PROTOCOL_XIAOZHI
             UpdateIotStates();
@@ -961,7 +964,7 @@ void Application::SetDeviceState(DeviceState state) {
             break;
         case kDeviceStateSpeaking:
             display->SetStatus(Lang::Strings::SPEAKING);
-
+            display->SetMainPanel(SCREEN_PANEL_COMM);
             if (listening_mode_ != kListeningModeRealtime) {
                 audio_processor_->Stop();
                 // Only AFE wake word can be detected in speaking mode

@@ -11,6 +11,7 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "display/display.cc"
             "display/lcd_display.cc"
             "display/oled_display.cc"
+            "display/honoka_display.cc"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"
@@ -35,6 +36,24 @@ list(APPEND SOURCES ${IOT_SOURCES})
 file(GLOB BOARD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/common/*.cc)
 list(APPEND SOURCES ${BOARD_COMMON_SOURCES})
 list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards/common)
+
+# 根据 BOARD_TYPE 配置添加UI文件
+if(CONFIG_BOARD_TYPE_ESP_BOX_3)
+    set(UI_FILES "ui_320x240")
+elseif(CONFIG_BOARD_TYPE_HONOKA_V1)
+    set(UI_FILES "ui_320x240")
+endif()
+file(GLOB UI_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/screen/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/components/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/fonts/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/images/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/screens/*.c
+)
+list(APPEND SOURCES ${UI_SOURCES})
+list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/screen)
+list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate)
 
 # 根据 BOARD_TYPE 配置添加对应的板级文件
 if(CONFIG_BOARD_TYPE_BREAD_COMPACT_WIFI)

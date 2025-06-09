@@ -1,18 +1,19 @@
-#include "wifi_board.h"
-#include "audio_codecs/box_audio_codec.h"
-#include "display/lcd_display.h"
-#include "esp_lcd_ili9341.h"
-#include "font_awesome_symbols.h"
-#include "application.h"
-#include "button.h"
-#include "config.h"
-#include "iot/thing_manager.h"
-
-#include <esp_log.h>
-#include <esp_lcd_panel_vendor.h>
 #include <driver/i2c_master.h>
 #include <driver/spi_common.h>
+#include <esp_lcd_panel_vendor.h>
+#include <esp_log.h>
 #include <wifi_station.h>
+
+#include "application.h"
+#include "audio_codecs/box_audio_codec.h"
+#include "ble_server.h"
+#include "button.h"
+#include "config.h"
+#include "display/honoka_display.h"
+#include "esp_lcd_ili9341.h"
+#include "font_awesome_symbols.h"
+#include "iot/thing_manager.h"
+#include "wifi_board.h"
 
 #define TAG "EspBox3Board"
 
@@ -21,30 +22,30 @@ LV_FONT_DECLARE(font_awesome_20_4);
 
 // Init ili9341 by custom cmd
 static const ili9341_lcd_init_cmd_t vendor_specific_init[] = {
-    {0xC8, (uint8_t []){0xFF, 0x93, 0x42}, 3, 0},
-    {0xC0, (uint8_t []){0x0E, 0x0E}, 2, 0},
-    {0xC5, (uint8_t []){0xD0}, 1, 0},
-    {0xC1, (uint8_t []){0x02}, 1, 0},
-    {0xB4, (uint8_t []){0x02}, 1, 0},
-    {0xE0, (uint8_t []){0x00, 0x03, 0x08, 0x06, 0x13, 0x09, 0x39, 0x39, 0x48, 0x02, 0x0a, 0x08, 0x17, 0x17, 0x0F}, 15, 0},
-    {0xE1, (uint8_t []){0x00, 0x28, 0x29, 0x01, 0x0d, 0x03, 0x3f, 0x33, 0x52, 0x04, 0x0f, 0x0e, 0x37, 0x38, 0x0F}, 15, 0},
+    {0xC8, (uint8_t[]){0xFF, 0x93, 0x42}, 3, 0},
+    {0xC0, (uint8_t[]){0x0E, 0x0E}, 2, 0},
+    {0xC5, (uint8_t[]){0xD0}, 1, 0},
+    {0xC1, (uint8_t[]){0x02}, 1, 0},
+    {0xB4, (uint8_t[]){0x02}, 1, 0},
+    {0xE0, (uint8_t[]){0x00, 0x03, 0x08, 0x06, 0x13, 0x09, 0x39, 0x39, 0x48, 0x02, 0x0a, 0x08, 0x17, 0x17, 0x0F}, 15, 0},
+    {0xE1, (uint8_t[]){0x00, 0x28, 0x29, 0x01, 0x0d, 0x03, 0x3f, 0x33, 0x52, 0x04, 0x0f, 0x0e, 0x37, 0x38, 0x0F}, 15, 0},
 
-    {0xB1, (uint8_t []){00, 0x1B}, 2, 0},
-    {0x36, (uint8_t []){0x08}, 1, 0},
-    {0x3A, (uint8_t []){0x55}, 1, 0},
-    {0xB7, (uint8_t []){0x06}, 1, 0},
+    {0xB1, (uint8_t[]){00, 0x1B}, 2, 0},
+    {0x36, (uint8_t[]){0x08}, 1, 0},
+    {0x3A, (uint8_t[]){0x55}, 1, 0},
+    {0xB7, (uint8_t[]){0x06}, 1, 0},
 
-    {0x11, (uint8_t []){0}, 0x80, 0},
-    {0x29, (uint8_t []){0}, 0x80, 0},
+    {0x11, (uint8_t[]){0}, 0x80, 0},
+    {0x29, (uint8_t[]){0}, 0x80, 0},
 
-    {0, (uint8_t []){0}, 0xff, 0},
+    {0, (uint8_t[]){0}, 0xff, 0},
 };
 
 class EspBox3Board : public WifiBoard {
-private:
+   private:
     i2c_master_bus_handle_t i2c_bus_;
     Button boot_button_;
-    LcdDisplay* display_;
+    HonokaDisplay* display_;
 
     void InitializeI2c() {
         // Initialize I2C peripheral
@@ -56,9 +57,10 @@ private:
             .glitch_ignore_cnt = 7,
             .intr_priority = 0,
             .trans_queue_depth = 0,
-            .flags = {
-                .enable_internal_pullup = 1,
-            },
+            .flags =
+                {
+                    .enable_internal_pullup = 1,
+                },
         };
         ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_cfg, &i2c_bus_));
     }
@@ -118,29 +120,19 @@ private:
 
         esp_lcd_panel_dev_config_t panel_config = {};
         panel_config.reset_gpio_num = GPIO_NUM_48;
-        panel_config.flags.reset_active_high = 1,
-        panel_config.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB;
+        panel_config.flags.reset_active_high = 1, panel_config.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB;
         panel_config.bits_per_pixel = 16;
-        panel_config.vendor_config = (void *)&vendor_config;
+        panel_config.vendor_config = (void*)&vendor_config;
         ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(panel_io, &panel_config, &panel));
-        
+
         esp_lcd_panel_reset(panel);
         esp_lcd_panel_init(panel);
         esp_lcd_panel_invert_color(panel, DISPLAY_BACKLIGHT_OUTPUT_INVERT);
         esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
         esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
         esp_lcd_panel_disp_on_off(panel, true);
-        display_ = new SpiLcdDisplay(panel_io, panel,
-                                    DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY,
-                                    {
-                                        .text_font = &font_puhui_20_4,
-                                        .icon_font = &font_awesome_20_4,
-#if CONFIG_USE_WECHAT_MESSAGE_STYLE
-                                        .emoji_font = font_emoji_32_init(),
-#else
-                                        .emoji_font = font_emoji_64_init(),
-#endif
-                                    });
+        display_ = new HonokaSpiLcdDisplay(panel_io, panel, DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, DISPLAY_MIRROR_X,
+                                           DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
     }
 
     // 物联网初始化，添加对 AI 可见设备
@@ -150,7 +142,7 @@ private:
         thing_manager.AddThing(iot::CreateThing("Screen"));
     }
 
-public:
+   public:
     EspBox3Board() : boot_button_(BOOT_BUTTON_GPIO) {
         InitializeI2c();
         InitializeSpi();
@@ -161,29 +153,28 @@ public:
     }
 
     virtual AudioCodec* GetAudioCodec() override {
-        static BoxAudioCodec audio_codec(
-            i2c_bus_, 
-            AUDIO_INPUT_SAMPLE_RATE, 
-            AUDIO_OUTPUT_SAMPLE_RATE,
-            AUDIO_I2S_GPIO_MCLK, 
-            AUDIO_I2S_GPIO_BCLK, 
-            AUDIO_I2S_GPIO_WS, 
-            AUDIO_I2S_GPIO_DOUT, 
-            AUDIO_I2S_GPIO_DIN,
-            AUDIO_CODEC_PA_PIN, 
-            AUDIO_CODEC_ES8311_ADDR, 
-            AUDIO_CODEC_ES7210_ADDR, 
-            AUDIO_INPUT_REFERENCE);
+        static BoxAudioCodec audio_codec(i2c_bus_, AUDIO_INPUT_SAMPLE_RATE, AUDIO_OUTPUT_SAMPLE_RATE, AUDIO_I2S_GPIO_MCLK, AUDIO_I2S_GPIO_BCLK,
+                                         AUDIO_I2S_GPIO_WS, AUDIO_I2S_GPIO_DOUT, AUDIO_I2S_GPIO_DIN, AUDIO_CODEC_PA_PIN, AUDIO_CODEC_ES8311_ADDR,
+                                         AUDIO_CODEC_ES7210_ADDR, AUDIO_INPUT_REFERENCE);
         return &audio_codec;
     }
 
-    virtual Display* GetDisplay() override {
-        return display_;
-    }
+    virtual Display* GetDisplay() override { return display_; }
 
     virtual Backlight* GetBacklight() override {
         static PwmBacklight backlight(DISPLAY_BACKLIGHT_PIN, DISPLAY_BACKLIGHT_OUTPUT_INVERT);
         return &backlight;
+    }
+
+    virtual void EnterWifiConfigMode() override {
+        BleServer server;
+        server.init();
+        while (1) {
+            int free_sram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+            int min_free_sram = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL);
+            ESP_LOGI(TAG, "Free internal: %u minimal internal: %u", free_sram, min_free_sram);
+            vTaskDelay(pdMS_TO_TICKS(10000));
+        }
     }
 };
 

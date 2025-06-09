@@ -150,6 +150,29 @@ const char* WifiBoard::GetNetworkStateIcon() {
     }
 }
 
+bool WifiBoard::GetNetworkRssi(int8_t& rssi) {
+    if (wifi_config_mode_) {
+        return false;
+    }
+    auto& wifi_station = WifiStation::GetInstance();
+    if (!wifi_station.IsConnected()) {
+        return false;
+    }
+    rssi = wifi_station.GetRssi();
+    return true;
+}
+
+std::string WifiBoard::GetNetWorkSsid() {
+    if (wifi_config_mode_) {
+        return "";
+    }
+    auto& wifi_station = WifiStation::GetInstance();
+    if (!wifi_station.IsConnected()) {
+        return "";
+    }
+    return wifi_station.GetSsid();
+}
+
 std::string WifiBoard::GetBoardJson() {
     // Set the board type for OTA
     auto& wifi_station = WifiStation::GetInstance();
