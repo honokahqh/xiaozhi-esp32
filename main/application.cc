@@ -11,6 +11,7 @@
 #include "assets/lang_config.h"
 #include "mcp_server.h"
 #include "audio_debugger.h"
+#include "battery_monitor.h"
 
 #if CONFIG_USE_AUDIO_PROCESSOR
 #include "afe_audio_processor.h"
@@ -374,6 +375,8 @@ void Application::StopListening() {
 
 void Application::Start() {
     auto& board = Board::GetInstance();
+    BatteryMonitor::GetInstance().Init();
+    
     SetDeviceState(kDeviceStateStarting);
 
     /* Setup the display */

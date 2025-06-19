@@ -8,6 +8,7 @@
 #include <string>
 
 #include "led/led.h"
+#include "driver/adc.h"
 #include "backlight.h"
 #include "camera.h"
 
@@ -49,11 +50,16 @@ public:
     virtual const char* GetNetworkStateIcon() = 0;
     virtual bool GetNetworkRssi(int8_t& rssi) { return -1; }
     virtual std::string GetNetWorkSsid() { return ""; } 
+    virtual bool GetBatteryADCInfo(adc_channel_t& ch, float& ratio, gpio_num_t& chargingIO, bool& chargingIOState) { return false; }
     virtual bool GetBatteryLevel(int &level, bool& charging, bool& discharging);
     virtual std::string GetJson();
     virtual void SetPowerSaveMode(bool enabled) = 0;
     virtual std::string GetBoardJson() = 0;
     virtual std::string GetDeviceStatusJson() = 0;
+
+    // 电池状态
+    int bat_level_ = 0;
+    bool bat_charging_ = false;
 };
 
 #define DECLARE_BOARD(BOARD_CLASS_NAME) \

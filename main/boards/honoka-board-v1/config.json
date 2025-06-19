@@ -1,0 +1,9 @@
+{
+    "target": "esp32s3",
+    "builds": [
+        {
+            "name": "honoka-board-1",
+            "sdkconfig_append": []
+        }
+    ]
+}

@@ -38,25 +38,25 @@ list(APPEND SOURCES ${BOARD_COMMON_SOURCES})
 list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards/common)
 
 # 根据 BOARD_TYPE 配置添加UI文件
-if(CONFIG_BOARD_TYPE_ESP_BOX_3)
+if(CONFIG_BOARD_TYPE_ESP_BOX_3 OR CONFIG_BOARD_TYPE_HONOKA_V1_1)
     set(UI_FILES "ui_320x240")
-elseif(CONFIG_BOARD_TYPE_HONOKA_V1)
-    set(UI_FILES "ui_320x240")
+    file(GLOB UI_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/screen/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/components/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/fonts/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/images/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/screens/*.c
+    )
+    list(APPEND SOURCES ${UI_SOURCES})
+    list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/screen)
+    list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate)
 endif()
-file(GLOB UI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/screen/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/components/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/fonts/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/images/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate/screens/*.c
-)
-list(APPEND SOURCES ${UI_SOURCES})
-list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/screen)
-list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/display/${UI_FILES}/generate)
 
 # 根据 BOARD_TYPE 配置添加对应的板级文件
-if(CONFIG_BOARD_TYPE_BREAD_COMPACT_WIFI)
+if(CONFIG_BOARD_TYPE_HONOKA_V1_1)
+    set(BOARD_TYPE "honoka-board-v1")
+elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_WIFI)
     set(BOARD_TYPE "bread-compact-wifi")
 elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_ML307)
     set(BOARD_TYPE "bread-compact-ml307")

@@ -20,6 +20,8 @@ void ScreenMain_init() {
     lv_label_set_text(ui_MainLabelStatus, "");
     lv_label_set_text(ui_MainLabelBat, "");
     lv_obj_add_flag(ui_MainLabelBat, LV_OBJ_FLAG_HIDDEN);
+
+    ESP_LOGI(TAG, "ScreenMain_init");
 }
 
 void ScreenMain_setMainPanel(screen_main_state_t state) {
