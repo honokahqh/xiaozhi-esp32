@@ -3,8 +3,10 @@
 #include <esp_lcd_panel_vendor.h>
 #include <esp_log.h>
 #include <esp_sleep.h>
+#include <esp_timer.h>
 #include <wifi_station.h>
 
+#include "application.h"
 #include "audio_codecs/box_audio_codec.h"
 #include "ble_server.h"
 #include "board_config.h"
@@ -56,6 +58,13 @@ class HonokaV11Board : public WifiBoard {
     }
 
     void InitializeButtons() {
+        boot_button_.OnClick([this]() {
+            auto& app = Application::GetInstance();
+            if (app.GetDeviceState() == kDeviceStateStarting && !WifiStation::GetInstance().IsConnected()) {
+                ResetWifiConfiguration();
+            }
+            app.ToggleChatState();
+        });
         esp_sleep_enable_ext0_wakeup(BOOT_BUTTON_GPIO, false);  // 下降沿唤醒
     }
 
@@ -103,6 +112,35 @@ class HonokaV11Board : public WifiBoard {
         thing_manager.AddThing(iot::CreateThing("Sleep"));
     }
 
+    void InitializeSleepTimer() {
+        esp_timer_handle_t sleep_timer = nullptr;
+        esp_timer_create_args_t sleep_timer_args = {
+            .callback =
+                [](void* arg) {
+                    static DeviceState last_state = kDeviceStateUnknown;
+                    static int sleep_timeout_s = 0;
+                    auto& app = Application::GetInstance();
+                    DeviceState state = app.GetDeviceState();
+                    if (last_state != state) {
+                        last_state = state;
+                        sleep_timeout_s = 0;
+                    }
+                    sleep_timeout_s += 10;
+                    if (sleep_timeout_s > SLEEP_TIMEOUT_S &&
+                        (state != kDeviceStateListening && state != kDeviceStateSpeaking && state != kDeviceStateUpgrading)) {
+                        ESP_LOGI(TAG, "Device state: %d timeout, goto deepsleep", state);
+                        esp_deep_sleep_start();
+                    }
+                },
+            .arg = this,
+            .dispatch_method = ESP_TIMER_TASK,
+            .name = "sleep_timer",
+            .skip_unhandled_events = false,
+        };
+        ESP_ERROR_CHECK(esp_timer_create(&sleep_timer_args, &sleep_timer));
+        esp_timer_start_periodic(sleep_timer, 10 * 1000 * 1000);
+    }
+
    public:
     HonokaV11Board() : boot_button_(BOOT_BUTTON_GPIO), volup_button_(VOLUME_UP_BUTTON_GPIO), voldown_button_(VOLUME_DOWN_BUTTON_GPIO) {
         gpio_config_t pwr_gpio_config = {0};
@@ -120,6 +158,7 @@ class HonokaV11Board : public WifiBoard {
         InitializeButtons();
         InitializeIot();
         GetBacklight()->RestoreBrightness();
+        InitializeSleepTimer();
     }
 
     virtual AudioCodec* GetAudioCodec() override {

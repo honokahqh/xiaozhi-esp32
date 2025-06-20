@@ -3,6 +3,8 @@
 
 #include <driver/gpio.h>
 
+#define SLEEP_TIMEOUT_S (180) 
+
 #define POWER_SAVE_ENABLE true
 
 #define AUDIO_INPUT_SAMPLE_RATE 24000

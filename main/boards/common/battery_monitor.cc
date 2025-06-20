@@ -106,7 +106,7 @@ void BatteryMonitor::Init() {
     ESP_ERROR_CHECK(esp_timer_create(&update_battery_timer_args, &update_timer_));
     ESP_ERROR_CHECK(esp_timer_start_periodic(update_timer_, 1000000));
 
-    ESP_LOGI(TAG, "BatteryMonitor init success");   
+    ESP_LOGI(TAG, "BatteryMonitor init success");
 }
 
 void BatteryMonitor::Deinit() {
@@ -184,6 +184,9 @@ bool BatteryMonitor::UpdateState() {
     }
     board.bat_level_ = percentage;
 
-    ESP_LOGI(TAG, "电池电压:%.2fV, 电量:%d, 充电状态:%s", average_voltage, board.bat_level_, board.bat_charging_ ? "充电中" : "未充电");
+    static int count = 0;
+    if (count++ % 10 == 0) {
+        ESP_LOGI(TAG, "电池电压:%.2fV, 电量:%d, 充电状态:%s", average_voltage, board.bat_level_, board.bat_charging_ ? "充电中" : "未充电");
+    }
     return true;
 }
